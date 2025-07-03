@@ -1,15 +1,26 @@
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse
 import asyncio
 
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+
+from app.backend.models.events import (
+    CompleteEvent,
+    ErrorEvent,
+    ProgressUpdateEvent,
+    StartEvent,
+)
 from app.backend.models.schemas import ErrorResponse, HedgeFundRequest
-from app.backend.models.events import StartEvent, ProgressUpdateEvent, ErrorEvent, CompleteEvent
-from app.backend.services.graph import create_graph, parse_hedge_fund_response, run_graph_async
-from app.backend.services.portfolio import create_portfolio
-from src.utils.progress import progress
+from app.backend.services.graph import (
+    create_graph,
+    parse_hedge_fund_response,
+    run_graph_async,
+)
+from app.backend.services.portfolio import create_portfolio, generate_portfolio_metrics
 from src.utils.analysts import get_agents_list
+from src.utils.progress import progress
 
 router = APIRouter(prefix="/hedge-fund")
+
 
 @router.post(
     path="/run",
@@ -88,6 +99,7 @@ async def run_hedge_fund(request: HedgeFundRequest):
                     data={
                         "decisions": parse_hedge_fund_response(result.get("messages", [])[-1].content),
                         "analyst_signals": result.get("data", {}).get("analyst_signals", {}),
+                        "portfolio_history": generate_portfolio_metrics(request.get_start_date(), request.end_date),
                     }
                 )
                 yield final_data.to_sse()
@@ -106,6 +118,7 @@ async def run_hedge_fund(request: HedgeFundRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred while processing the request: {str(e)}")
 
+
 @router.get(
     path="/agents",
     responses={
@@ -120,3 +133,17 @@ async def get_agents():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to retrieve agents: {str(e)}")
 
+
+@router.get(
+    path="/metrics",
+    responses={
+        200: {"description": "Portfolio metrics"},
+        500: {"model": ErrorResponse, "description": "Internal server error"},
+    },
+)
+async def get_metrics(start_date: str, end_date: str):
+    """Return mock portfolio metrics for the given period."""
+    try:
+        return {"metrics": generate_portfolio_metrics(start_date, end_date)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate metrics: {str(e)}")

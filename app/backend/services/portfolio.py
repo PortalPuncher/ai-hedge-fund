@@ -1,7 +1,5 @@
-
-
 def create_portfolio(initial_cash: float, margin_requirement: float, tickers: list[str]) -> dict:
-  return {
+    return {
         "cash": initial_cash,  # Initial cash amount
         "margin_requirement": margin_requirement,  # Initial margin requirement
         "margin_used": 0.0,  # total margin usage across all short positions
@@ -23,3 +21,27 @@ def create_portfolio(initial_cash: float, margin_requirement: float, tickers: li
             for ticker in tickers
         },
     }
+
+
+def generate_portfolio_metrics(start_date: str, end_date: str) -> list[dict]:
+    """Generate simple mock time-series metrics for demonstration."""
+    from datetime import datetime, timedelta
+
+    start = datetime.strptime(start_date, "%Y-%m-%d")
+    end = datetime.strptime(end_date, "%Y-%m-%d")
+    days = (end - start).days
+
+    metrics = []
+    value = 100000.0
+    for i in range(days + 1):
+        current = start + timedelta(days=i)
+        value += 1000 * ((-1) ** i)
+        metrics.append(
+            {
+                "date": current.strftime("%Y-%m-%d"),
+                "portfolio_value": value,
+                "long_exposure": max(value * 0.6, 0),
+                "short_exposure": max(value * 0.4, 0),
+            }
+        )
+    return metrics
