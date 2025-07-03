@@ -26,6 +26,12 @@ export interface AgentNodeData {
 export interface OutputNodeData {
   decisions: Record<string, any>;
   analyst_signals: Record<string, any>;
+  portfolio_history?: {
+    date: string;
+    portfolio_value: number;
+    long_exposure: number;
+    short_exposure: number;
+  }[];
 }
 
 // Default agent node state

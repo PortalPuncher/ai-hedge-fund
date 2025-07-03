@@ -25,6 +25,12 @@ npm run dev
 
 While the application is running, changes made to the code will be automatically reflected in the browser!
 
+## Portfolio Charts
+
+This frontend uses **Chart.js** (via `react-chartjs-2`) to render portfolio
+performance and exposure charts. After running a simulation the metrics are shown
+in the bottom panel's **Output** tab.
+
 ## Disclaimer
 
 This project is for **educational and research purposes only**.
