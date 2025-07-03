@@ -1,3 +1,18 @@
+import sys
+from types import SimpleNamespace
+from src.data import models as data_models
+class Price:
+    def __init__(self, **k):
+        self.__dict__.update(k)
+    def model_dump(self):
+        return self.__dict__
+class PriceResponse:
+    def __init__(self, **k):
+        self.ticker = k.get("ticker")
+        self.prices = [Price(**p) for p in k.get("prices", [])]
+data_models.Price = Price
+data_models.PriceResponse = PriceResponse
+
 import os
 import pytest
 from unittest.mock import Mock, patch, call
