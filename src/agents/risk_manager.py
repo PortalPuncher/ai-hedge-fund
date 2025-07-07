@@ -111,7 +111,10 @@ def risk_management_agent(state: AgentState):
     # Add the signal to the analyst_signals list
     state["data"]["analyst_signals"]["risk_management_agent"] = risk_analysis
 
+    # Combine existing immutable sequence with the new message in a type-safe way
+    updated_messages = list(state["messages"]) + [message]
+
     return {
-        "messages": state["messages"] + [message],
+        "messages": updated_messages,
         "data": data,
     }

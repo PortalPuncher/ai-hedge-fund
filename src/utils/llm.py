@@ -2,7 +2,7 @@
 
 import json
 from pydantic import BaseModel
-from src.llm.models import get_model, get_model_info
+from src.llm.models import get_model, get_model_info, ModelProvider
 from src.utils.progress import progress
 from src.graph.state import AgentState
 from typing import Any
@@ -33,19 +33,27 @@ def call_llm(
     
     # Initialize with sensible defaults in case no configuration is found
     model_name: str | None = None
-    model_provider: str | None = None
+    model_provider_str: str | None = None
+    model_provider: ModelProvider | None = None
 
     # Extract model configuration if provided in the state
     if state and agent_name:
-        model_name, model_provider = get_agent_model_config(state, agent_name)
+        model_name, model_provider_str = get_agent_model_config(state, agent_name)
 
     # Fallback to safe defaults
     if not model_name:
         model_name = "gpt-4.1"
-    if not model_provider:
-        model_provider = "OPENAI"
+    if not model_provider_str:
+        model_provider_str = "OPENAI"
 
-    model_info = get_model_info(model_name, model_provider)
+    # Convert provider string to enum safely
+    try:
+        model_provider = ModelProvider(model_provider_str)
+    except ValueError:
+        # Fallback to OPENAI if unknown provider string
+        model_provider = ModelProvider.OPENAI
+
+    model_info = get_model_info(model_name, model_provider.value)
     llm = get_model(model_name, model_provider)
 
     # Use JSON-mode structured output only when it is supported (or model info is unknown)
