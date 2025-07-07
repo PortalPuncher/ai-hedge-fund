@@ -1,5 +1,10 @@
 from langchain_core.messages import HumanMessage
-from langchain_core.messages import Message  # For type hints and linter compliance
+
+try:
+    from langchain_core.messages import Message as _Message  # type: ignore  # noqa: F401
+except ImportError:  # Fallback for environments without langchain_core
+    from typing import Any as _Message  # type: ignore  # noqa: F401
+
 from src.graph.state import AgentState, show_agent_reasoning
 from src.utils.progress import progress
 from src.tools.api import get_prices, prices_to_df
