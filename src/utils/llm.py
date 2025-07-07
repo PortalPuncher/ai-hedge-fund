@@ -62,8 +62,10 @@ def call_llm(
             f"Failed to initialise LLM for provider '{model_provider.value}' with model '{model_name}'."
         )
 
-    # Use JSON-mode structured output only when it is supported (or model info is unknown)
-    if model_info is None or model_info.has_json_mode():
+    supports_json_mode = True if model_info is None else model_info.has_json_mode()
+
+    # Use JSON-mode structured output only if supported
+    if supports_json_mode:
         llm = llm.with_structured_output(
             pydantic_model,
             method="json_mode",
@@ -76,7 +78,7 @@ def call_llm(
             result = llm.invoke(prompt)
 
             # For non-JSON support models, we need to extract and parse the JSON manually
-            if model_info and not model_info.has_json_mode():
+            if model_info is not None and not model_info.has_json_mode():
                 parsed_result = extract_json_from_response(result.content)
                 if parsed_result:
                     return pydantic_model(**parsed_result)

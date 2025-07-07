@@ -1,4 +1,5 @@
 from langchain_core.messages import HumanMessage
+from langchain_core.messages import Message  # For type hints and linter compliance
 from src.graph.state import AgentState, show_agent_reasoning
 from src.utils.progress import progress
 from src.tools.api import get_prices, prices_to_df
