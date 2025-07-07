@@ -74,7 +74,8 @@ def risk_management_agent(state: AgentState):
         position = portfolio.get("positions", {}).get(ticker, {})
         long_value = position.get("long", 0) * current_price
         short_value = position.get("short", 0) * current_price
-        current_position_value = abs(long_value - short_value)  # Use absolute exposure
+        # Use gross exposure for risk calculations (both long and short count)
+        current_position_value = long_value + short_value  # Total exposure
         
         # Calculate position limit (20% of total portfolio)
         position_limit = total_portfolio_value * 0.20

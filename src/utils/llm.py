@@ -30,11 +30,15 @@ def call_llm(
         An instance of the specified Pydantic model
     """
     
-    # Extract model configuration if state is provided and agent_name is available
+    # Initialize with sensible defaults in case no configuration is found
+    model_name: str | None = None
+    model_provider: str | None = None
+
+    # Extract model configuration if provided in the state
     if state and agent_name:
         model_name, model_provider = get_agent_model_config(state, agent_name)
-    
-    # Fallback to defaults if still not provided
+
+    # Fallback to safe defaults
     if not model_name:
         model_name = "gpt-4.1"
     if not model_provider:
@@ -43,8 +47,8 @@ def call_llm(
     model_info = get_model_info(model_name, model_provider)
     llm = get_model(model_name, model_provider)
 
-    # For non-JSON support models, we can use structured output
-    if not (model_info and not model_info.has_json_mode()):
+    # Use JSON-mode structured output only when it is supported (or model info is unknown)
+    if model_info is None or model_info.has_json_mode():
         llm = llm.with_structured_output(
             pydantic_model,
             method="json_mode",

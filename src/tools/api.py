@@ -23,7 +23,14 @@ from src.data.models import (
 _cache = get_cache()
 
 
-def _make_api_request(url: str, headers: dict, method: str = "GET", json_data: dict = None, max_retries: int = 3) -> requests.Response:
+def _make_api_request(
+    url: str,
+    headers: dict,
+    method: str = "GET",
+    json_data: dict | None = None,
+    max_retries: int = 3,
+    timeout: int | float | None = None,
+) -> requests.Response:
     """
     Make an API request with rate limiting handling and moderate backoff.
     
@@ -33,6 +40,7 @@ def _make_api_request(url: str, headers: dict, method: str = "GET", json_data: d
         method: HTTP method (GET or POST)
         json_data: JSON data for POST requests
         max_retries: Maximum number of retries (default: 3)
+        timeout: Timeout for the request (default: 30 seconds)
     
     Returns:
         requests.Response: The response object
@@ -42,9 +50,15 @@ def _make_api_request(url: str, headers: dict, method: str = "GET", json_data: d
     """
     for attempt in range(max_retries + 1):  # +1 for initial attempt
         if method.upper() == "POST":
-            response = requests.post(url, headers=headers, json=json_data)
+            if timeout is not None:
+                response = requests.post(url, headers=headers, json=json_data, timeout=timeout)
+            else:
+                response = requests.post(url, headers=headers, json=json_data)
         else:
-            response = requests.get(url, headers=headers)
+            if timeout is not None:
+                response = requests.get(url, headers=headers, timeout=timeout)
+            else:
+                response = requests.get(url, headers=headers)
         
         if response.status_code == 429 and attempt < max_retries:
             # Linear backoff: 60s, 90s, 120s, 150s...
@@ -55,6 +69,9 @@ def _make_api_request(url: str, headers: dict, method: str = "GET", json_data: d
         
         # Return the response (whether success, other errors, or final 429)
         return response
+
+    # Safety fallback: should not be reached, but keeps type checker happy
+    return response  # type: ignore[arg-type]
 
 
 def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
