@@ -56,6 +56,12 @@ def call_llm(
     model_info = get_model_info(model_name, model_provider.value)
     llm = get_model(model_name, model_provider)
 
+    # If get_model returns None (e.g., unsupported provider or missing API key), abort early
+    if llm is None:
+        raise RuntimeError(
+            f"Failed to initialise LLM for provider '{model_provider.value}' with model '{model_name}'."
+        )
+
     # Use JSON-mode structured output only when it is supported (or model info is unknown)
     if model_info is None or model_info.has_json_mode():
         llm = llm.with_structured_output(
