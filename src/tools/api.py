@@ -48,17 +48,21 @@ def _make_api_request(
     Raises:
         Exception: If the request fails with a non-429 error
     """
+    response: requests.Response | None = None
+
     for attempt in range(max_retries + 1):  # +1 for initial attempt
         if method.upper() == "POST":
-            if timeout is not None:
-                response = requests.post(url, headers=headers, json=json_data, timeout=timeout)
-            else:
-                response = requests.post(url, headers=headers, json=json_data)
+            response = (
+                requests.post(url, headers=headers, json=json_data, timeout=timeout)
+                if timeout is not None
+                else requests.post(url, headers=headers, json=json_data)
+            )
         else:
-            if timeout is not None:
-                response = requests.get(url, headers=headers, timeout=timeout)
-            else:
-                response = requests.get(url, headers=headers)
+            response = (
+                requests.get(url, headers=headers, timeout=timeout)
+                if timeout is not None
+                else requests.get(url, headers=headers)
+            )
         
         if response.status_code == 429 and attempt < max_retries:
             # Linear backoff: 60s, 90s, 120s, 150s...
@@ -67,11 +71,13 @@ def _make_api_request(
             time.sleep(delay)
             continue
         
-        # Return the response (whether success, other errors, or final 429)
+        # Return immediately if not retrying
         return response
 
-    # Safety fallback: should not be reached, but keeps type checker happy
-    return response  # type: ignore[arg-type]
+    # Fallback (should not happen): return last response if available
+    if response is None:
+        raise RuntimeError("_make_api_request failed to obtain a response object")
+    return response
 
 
 def get_prices(ticker: str, start_date: str, end_date: str) -> list[Price]:
