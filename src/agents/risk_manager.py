@@ -1,4 +1,10 @@
 from langchain_core.messages import HumanMessage
+
+try:
+    from langchain_core.messages import Message as _Message  # type: ignore  # noqa: F401
+except ImportError:  # Fallback for environments without langchain_core
+    from typing import Any as _Message  # type: ignore  # noqa: F401
+
 from src.graph.state import AgentState, show_agent_reasoning
 from src.utils.progress import progress
 from src.tools.api import get_prices, prices_to_df
@@ -74,7 +80,8 @@ def risk_management_agent(state: AgentState):
         position = portfolio.get("positions", {}).get(ticker, {})
         long_value = position.get("long", 0) * current_price
         short_value = position.get("short", 0) * current_price
-        current_position_value = abs(long_value - short_value)  # Use absolute exposure
+        # Use gross exposure for risk calculations (both long and short count)
+        current_position_value = long_value + short_value  # Total exposure
         
         # Calculate position limit (20% of total portfolio)
         position_limit = total_portfolio_value * 0.20
@@ -110,7 +117,10 @@ def risk_management_agent(state: AgentState):
     # Add the signal to the analyst_signals list
     state["data"]["analyst_signals"]["risk_management_agent"] = risk_analysis
 
+    # Combine existing immutable sequence with the new message in a type-safe way
+    updated_messages = list(state["messages"]) + [message]
+
     return {
-        "messages": state["messages"] + [message],
+        "messages": updated_messages,
         "data": data,
     }
