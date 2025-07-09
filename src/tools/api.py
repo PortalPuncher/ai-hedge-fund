@@ -65,9 +65,12 @@ def _make_api_request(
             )
         
         if response.status_code == 429 and attempt < max_retries:
-            # Linear backoff: 60s, 90s, 120s, 150s...
-            delay = 60 + (30 * attempt)
-            print(f"Rate limited (429). Attempt {attempt + 1}/{max_retries + 1}. Waiting {delay}s before retrying...")
+            # Fixed: Use exponential backoff with jitter for better performance
+            # Base delay of 5s, exponential backoff: 5s, 10s, 20s with jitter
+            base_delay = 5 * (2 ** attempt)
+            jitter = base_delay * 0.1 * (0.5 - __import__('random').random())  # ±10% jitter
+            delay = base_delay + jitter
+            print(f"Rate limited (429). Attempt {attempt + 1}/{max_retries + 1}. Waiting {delay:.1f}s before retrying...")
             time.sleep(delay)
             continue
         
